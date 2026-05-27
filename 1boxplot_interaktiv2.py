@@ -262,17 +262,17 @@ with tab2:
     if show_cpp:
         ax_p.plot(cpp_slice, label="CPP ár (EDF)", color="orange", linewidth=2)
     if show_tou:
-        ax_p.plot(tou_slice, label="TOU ár", color="purple", linewidth=2, linestyle=":")
+        ax_p.plot(tou_slice, label="TOU ár", color="purple", linewidth=2)
     ax_p.set_ylabel("Áramár [Ft/kWh]", color="blue")
     ax_p.tick_params(axis='y', labelcolor="blue")
 
     # Terhelések kirajzolása (Jobb tengely - most már egyesével kapcsolható)
     if show_orig_load:
-        ax_l.plot(eon_orig_slice, label="Eredeti fogyasztás", color="green", linestyle="--", alpha=0.7)
+        ax_l.plot(eon_orig_slice, label="Eredeti fogyasztás", color="green", alpha=0.7)
     if show_shifted_edf:
         ax_l.plot(eon_shift_edf_slice, label="Módosított fogyasztás (CPP)", color="red", linewidth=1.5)
     if show_shifted_tou:
-        ax_l.plot(eon_shift_tou_slice, label="Módosított fogyasztás (TOU)", color="crimson", linestyle="-.", linewidth=1.5)
+        ax_l.plot(eon_shift_tou_slice, label="Módosított fogyasztás (TOU)", color="crimson", linewidth=1.5)
     ax_l.set_ylabel("Fogyasztás [kWh]", color="green")
     ax_l.tick_params(axis='y', labelcolor="green")
 
