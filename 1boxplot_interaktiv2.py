@@ -204,8 +204,32 @@ with tab2:
         skala_input = st.number_input("Skála (Fogyasztás kWh/év):", min_value=1000, max_value=10000, value=3000, step=500)
     with col3:
         shift_input = st.slider("Shift ratio (Rugalmasság 0-1):", min_value=0.0, max_value=1.0, value=0.3, step=0.05)
-        
-    start_hour = st.slider("Kezdő óra kiválasztása az évben (0 - 8500):", min_value=0, max_value=8500, value=7000, step=24)
+
+    # DÁTUM ÉS ÓRA VÁLASZTÓ (A csúszka helyett)
+    st.write("**Kezdő időpont kiválasztása:**")
+    d_col1, d_col2 = st.columns(2)
+    
+    with d_col1:
+        # A naptár minimum és maximum dátuma igazodik a kiválasztott évhez
+        selected_date = st.date_input(
+            "Válaszd ki a napot:",
+            value=pd.to_datetime(f"{selected_year}-10-15").date(),
+            min_value=pd.to_datetime(f"{selected_year}-01-01").date(),
+            max_value=pd.to_datetime(f"{selected_year}-12-25").date() # dec 25 a max, hogy beleférjen még 176 óra az évbe
+        )
+    with d_col2:
+        selected_hour = st.number_input("Kezdő óra (0-23):", min_value=0, max_value=23, value=12, step=1)
+
+    # Kiszámoljuk, hogy a kiválasztott dátum és óra az év hányadik órája (0-8760 között)
+    base_date = pd.to_datetime(f"{selected_year}-01-01")
+    target_date = pd.to_datetime(f"{selected_date} {selected_hour}:00:00")
+    
+    # A timedelta segítségével megkapjuk az eltelt órák számát
+    start_hour = int((target_date - base_date).total_seconds() // 3600)
+    end_hour = start_hour + 168
+    
+    # Kiírjuk emlékeztetőnek a felhasználónak
+    st.caption(f"A kiválasztott időpont az év **{start_hour}.** órájára esik. A grafikon a következő 168 órát (1 hét) mutatja.")
     end_hour = start_hour + 168
     
     # Láthatósági beállítások Streamlit checkboxokkal (a CheckButtons kiváltása)
