@@ -228,18 +228,15 @@ with tab2:
     start_hour = int((target_date - base_date).total_seconds() // 3600)
     end_hour = start_hour + 168
     
-    # Kiírjuk emlékeztetőnek a felhasználónak
-    st.caption(f"A kiválasztott időpont az év **{start_hour}.** órájára esik. A grafikon a következő 168 órát (1 hét) mutatja.")
-    end_hour = start_hour + 168
-    
-    # Láthatósági beállítások Streamlit checkboxokkal (a CheckButtons kiváltása)
+# Láthatósági beállítások Streamlit checkboxokkal (Szétbontva a módosított fogyasztások)
     st.write("**Görbék ki-be kapcsolása:**")
-    c_col1, c_col2, c_col3, c_col4, c_col5 = st.columns(5)
+    c_col1, c_col2, c_col3, c_col4, c_col5, c_col6 = st.columns(6)
     show_piac = c_col1.checkbox("Piaci ár", value=True)
     show_cpp = c_col2.checkbox("CPP (EDF) ár", value=True)
     show_tou = c_col3.checkbox("TOU ár", value=True)
     show_orig_load = c_col4.checkbox("Eredeti fogyasztás", value=True)
-    show_shifted_load = c_col5.checkbox("Módosított fogyasztások", value=True)
+    show_shifted_edf = c_col5.checkbox("Módosított CPP (EDF)", value=True)  # Új külön gomb
+    show_shifted_tou = c_col6.checkbox("Módosított TOU", value=True)      # Új külön gomb
 
     # Számítás elvégzése az órás adatok kinyerésével
     _, hourly = calculate_all_scenarios(
@@ -261,7 +258,7 @@ with tab2:
 
     # Árak kirajzolása (Bal tengely)
     if show_piac:
-        ax_p.plot(v_slice, label="Piaci ár", color="blue", alpha=0.5)
+        ax_p.plot(v_slice, label="Piaci ár", color="blue", alpha=0.3)
     if show_cpp:
         ax_p.plot(cpp_slice, label="CPP ár (EDF)", color="orange", linewidth=2)
     if show_tou:
@@ -269,17 +266,18 @@ with tab2:
     ax_p.set_ylabel("Áramár [Ft/kWh]", color="blue")
     ax_p.tick_params(axis='y', labelcolor="blue")
 
-    # Terhelések kirajzolása (Jobb tengely)
+    # Terhelések kirajzolása (Jobb tengely - most már egyesével kapcsolható)
     if show_orig_load:
         ax_l.plot(eon_orig_slice, label="Eredeti fogyasztás", color="green", linestyle="--", alpha=0.7)
-    if show_shifted_load:
-        ax_l.plot(eon_shift_edf_slice, label="Módosított fogyasztás (CPP)", color="red")
-        ax_l.plot(eon_shift_tou_slice, label="Módosított fogyasztás (TOU)", color="crimson", linestyle="-.")
+    if show_shifted_edf:
+        ax_l.plot(eon_shift_edf_slice, label="Módosított fogyasztás (CPP)", color="red", linewidth=1.5)
+    if show_shifted_tou:
+        ax_l.plot(eon_shift_tou_slice, label="Módosított fogyasztás (TOU)", color="crimson", linestyle="-.", linewidth=1.5)
     ax_l.set_ylabel("Fogyasztás [kWh]", color="green")
     ax_l.tick_params(axis='y', labelcolor="green")
 
     # Közös formázás
-    ax_p.set_title(f"Tarifarendszerek és lakossági reakciók összehasonlítása ({selected_year}, {start_hour}. órától, 1 hét)", fontweight='bold')
+    ax_p.set_title(f"Tarifarendszerek és lakossági reakciók összehasonlítása ({selected_year}, {selected_date} {selected_hour}:00-tól, 1 hét)", fontweight='bold')
     ax_p.set_xlim(0, 168)
     ax_p.set_xticks(range(0, 169, 24))
     ax_p.set_xlabel("Eltelt órák a héten")
