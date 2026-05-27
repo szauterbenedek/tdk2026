@@ -136,77 +136,98 @@ for _, row in df_unit.iterrows():
 df_plot = pd.concat(final_data)
 
 # ==========================================================
-# VIZUALIZÁCIÓ KIKÜLDÉSE A WEBOS FELÜLETRE
+# FÜLEK (TABS) LÉTREHOZÁSA
 # ==========================================================
-st.subheader("Szimulációs Eredmények (Boxplot diagramok)")
+tab1, tab2, tab3 = st.tabs(["📊 Szimulációs Boxplotok", "📈 Fogyasztási Eloszlás (KDE)", "💾 Excel Export & Statisztika"])
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+# ----------------------------------------------------------
+# 1. FÜL: BOXPLOT DIAGRAMOK
+# ----------------------------------------------------------
+with tab1:
+    st.subheader("Szimulációs Eredmények (Boxplot diagramok)")
+    
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
 
-for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['CPP (EDF Tempo jellegű)', 'TOU Rendszer'], ['viridis', 'magma']):
-    sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], 
-                palette=pal, showfliers=False, ax=ax)
-    ax.set_title(title, fontweight='bold', fontsize=12)
-    ax.set_ylabel("Éves számla [Ft]")
-    ax.legend(title="Rugalmasság", loc='upper left', fontsize='x-small', ncol=4)
-    ax.grid(axis='y', alpha=0.15)
-    ax.axhline(y=36*np.median(consumer_loads_synthetic), color='black', ls='--', alpha=0.3)
-    ax.set_ylim(0, 1e6)
+    for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['CPP (EDF Tempo jellegű)', 'TOU Rendszer'], ['viridis', 'magma']):
+        sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], 
+                    palette=pal, showfliers=False, ax=ax)
+        ax.set_title(title, fontweight='bold', fontsize=12)
+        ax.set_ylabel("Éves számla [Ft]")
+        ax.legend(title="Rugalmasság", loc='upper left', fontsize='x-small', ncol=4)
+        ax.grid(axis='y', alpha=0.15)
+        ax.axhline(y=36*np.median(consumer_loads_synthetic), color='black', ls='--', alpha=0.3)
+        ax.set_ylim(0, 1e6)
 
-plt.tight_layout()
-st.pyplot(fig)  # EZ küldi ki a képet a webre!
+    plt.tight_layout()
+    st.pyplot(fig)
 
-# --- Második Grafikon (KDE) ---
-st.subheader("Fogyasztási Eloszlás Rekonstrukciója (KDE)")
-fig2, ax_kde = plt.subplots(figsize=(10, 4))
-sns.histplot(consumer_loads_synthetic, bins=8, color='#88c488', edgecolor='black', stat="density", alpha=0.9, ax=ax_kde)
-sns.kdeplot(consumer_loads_synthetic, color='green', linewidth=3, bw_adjust=1.5, ax=ax_kde)
-ax_kde.set_xlim(2500, 18000)
-st.pyplot(fig2)
+# ----------------------------------------------------------
+# 2. FÜL: KDE DIAGRAM
+# ----------------------------------------------------------
+with tab2:
+    st.subheader("Fogyasztási Eloszlás Rekonstrukciója (KDE)")
+    st.write("Ez a grafikon mutatja be a szimulációhoz használt szintetikus lakossági fogyasztási eloszlást.")
+    
+    fig2, ax_kde = plt.subplots(figsize=(10, 5))
+    sns.histplot(consumer_loads_synthetic, bins=8, color='#88c488', edgecolor='black', stat="density", alpha=0.9, ax=ax_kde)
+    sns.kdeplot(consumer_loads_synthetic, color='green', linewidth=3, bw_adjust=1.5, ax=ax_kde)
+    ax_kde.set_xlim(2500, 18000)
+    ax_kde.set_xlabel("Éves fogyasztás [kWh]")
+    ax_kde.set_ylabel("Sűrűség (Részesedés)")
+    
+    plt.tight_layout()
+    st.pyplot(fig2)
 
-# ==========================================================
-# EXCEL ADATGENERÁLÁS ÉS LETÖLTÉS
-# ==========================================================
-st.subheader("Adatok Exportálása TDK dolgozathoz")
+# ----------------------------------------------------------
+# 3. FÜL: EXCEL GENERÁLÁS ÉS ADATOK
+# ----------------------------------------------------------
+with tab3:
+    st.subheader("Adatok Exportálása TDK dolgozathoz")
+    st.write("Az alábbi gombbal letöltheted a generált háttérstatisztikákat Excel formátumban.")
 
-df_unit['Rugalmasság_num'] = df_unit['Rugalmasság'].str.replace('%', '').astype(int)
-stats_data = []
-for _, row in df_unit.iterrows():
-    bills_edf = consumer_loads_synthetic * row['EDF_UC']
-    bills_tou = consumer_loads_synthetic * row['TOU_UC']
-    stats_data.append({
-        'Rendszer': 'EDF', 'Év': row['Év'], 'Rugalmasság_érték': row['Rugalmasság_num'], 'Rugalmasság (%)': row['Rugalmasság'],
-        'Alsó kvartilis (Q1) [Ft]': np.percentile(bills_edf, 25), 'Medián [Ft]': np.percentile(bills_edf, 50),
-        'Felső kvartilis (Q3) [Ft]': np.percentile(bills_edf, 75), 'Átlag [Ft]': np.mean(bills_edf)
-    })
-    stats_data.append({
-        'Rendszer': 'TOU', 'Év': row['Év'], 'Rugalmasság_érték': row['Rugalmasság_num'], 'Rugalmasság (%)': row['Rugalmasság'],
-        'Alsó kvartilis (Q1) [Ft]': np.percentile(bills_tou, 25), 'Medián [Ft]': np.percentile(bills_tou, 50),
-        'Felső kvartilis (Q3) [Ft]': np.percentile(bills_tou, 75), 'Átlag [Ft]': np.mean(bills_tou)
-    })
-df_final_stats = pd.DataFrame(stats_data)
+    df_unit['Rugalmasság_num'] = df_unit['Rugalmasság'].str.replace('%', '').astype(int)
+    stats_data = []
+    for _, row in df_unit.iterrows():
+        bills_edf = consumer_loads_synthetic * row['EDF_UC']
+        bills_tou = consumer_loads_synthetic * row['TOU_UC']
+        stats_data.append({
+            'Rendszer': 'EDF', 'Év': row['Év'], 'Rugalmasság_érték': row['Rugalmasság_num'], 'Rugalmasság (%)': row['Rugalmasság'],
+            'Alsó kvartilis (Q1) [Ft]': np.percentile(bills_edf, 25), 'Medián [Ft]': np.percentile(bills_edf, 50),
+            'Felső kvartilis (Q3) [Ft]': np.percentile(bills_edf, 75), 'Átlag [Ft]': np.mean(bills_edf)
+        })
+        stats_data.append({
+            'Rendszer': 'TOU', 'Év': row['Év'], 'Rugalmasság_érték': row['Rugalmasság_num'], 'Rugalmasság (%)': row['Rugalmasság'],
+            'Alsó kvartilis (Q1) [Ft]': np.percentile(bills_tou, 25), 'Medián [Ft]': np.percentile(bills_tou, 50),
+            'Felső kvartilis (Q3) [Ft]': np.percentile(bills_tou, 75), 'Átlag [Ft]': np.mean(bills_tou)
+        })
+    df_final_stats = pd.DataFrame(stats_data)
 
-median_list = []
-fix_median_val = 36 * np.median(consumer_loads_synthetic)
-for year in YEARS:
-    year_row = {'Év': year, 'Fix_36Ft_Median': fix_median_val}
-    year_data = df_unit[df_unit['Év'] == year]
-    for _, row in year_data.iterrows():
-        r_label = row['Rugalmasság']
-        year_row[f'EDF_{r_label}'] = np.median(consumer_loads_synthetic * row['EDF_UC'])
-        year_row[f'TOU_{r_label}'] = np.median(consumer_loads_synthetic * row['TOU_UC'])
-    median_list.append(year_row)
-df_medians_summary = pd.DataFrame(median_list)
+    median_list = []
+    fix_median_val = 36 * np.median(consumer_loads_synthetic)
+    for year in YEARS:
+        year_row = {'Év': year, 'Fix_36Ft_Median': fix_median_val}
+        year_data = df_unit[df_unit['Év'] == year]
+        for _, row in year_data.iterrows():
+            r_label = row['Rugalmasság']
+            year_row[f'EDF_{r_label}'] = np.median(consumer_loads_synthetic * row['EDF_UC'])
+            year_row[f'TOU_{r_label}'] = np.median(consumer_loads_synthetic * row['TOU_UC'])
+        median_list.append(year_row)
+    df_medians_summary = pd.DataFrame(median_list)
 
-# Excel fájl memóriába írása a letöltéshez
-buffer = io.BytesIO()
-with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-    df_final_stats[df_final_stats['Rendszer'] == 'EDF'].to_excel(writer, sheet_name='EDF_Reszletes', index=False)
-    df_final_stats[df_final_stats['Rendszer'] == 'TOU'].to_excel(writer, sheet_name='TOU_Reszletes', index=False)
-    df_medians_summary.to_excel(writer, sheet_name='Osszesitett_Medianok', index=False)
+    # Excel fájl memóriába írása a letöltéshez
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df_final_stats[df_final_stats['Rendszer'] == 'EDF'].to_excel(writer, sheet_name='EDF_Reszletes', index=False)
+        df_final_stats[df_final_stats['Rendszer'] == 'TOU'].to_excel(writer, sheet_name='TOU_Reszletes', index=False)
+        df_medians_summary.to_excel(writer, sheet_name='Osszesitett_Medianok', index=False)
 
-st.download_button(
-    label="📊 Excel Statisztika Letöltése",
-    data=buffer.getvalue(),
-    file_name="Energia_Szamla_Statisztika.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    # Elhelyezünk egy kis előnézetet a táblázatból, hogy jól nézzen ki az oldal
+    st.write("### Összesített Mediánok Előnézete:")
+    st.dataframe(df_medians_summary.head(5))
+
+    st.download_button(
+        label="📊 Teljes Excel Statisztika Letöltése",
+        data=buffer.getvalue(),
+        file_name="Energia_Szamla_Statisztika.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
