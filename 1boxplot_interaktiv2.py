@@ -9,8 +9,8 @@ import io
 # WEBOLDAL BEÁLLÍTÁSAI
 # =========================
 st.set_page_config(page_title="Rezsi Kalkulátor - TDK", layout="wide")
-st.title("Lakossági Rezsi Kalkulátor Szimuláció")
-st.write("A bemeneti adatok alapján a látogatók különböző tarifarendszereket alkothatnak.")
+st.title("Lakossági Rezsi Kalkulátor & Piaci Elemzés")
+st.write("Dinamikus tarifarendszerek és lakossági fogyasztói válaszok szimulációja.")
 
 # =========================
 # ADATOK BETÖLTÉSE
@@ -28,38 +28,16 @@ def load_data():
 piac, euro, eon_excel = load_data()
 
 # ==========================================================
-# ADATGENERÁLÁS (Gauss Keverékmodell)
-# ==========================================================
-@st.cache_data
-def generate_synthetic_data():
-    n_samples = 10000 
-    sigma_components = 900
-    components = [
-        (3800,  0.26), (5600,  0.28), (7400,  0.21), (9200,  0.06),
-        (11000, 0.06), (12800, 0.02), (14600, 0.06), (16400, 0.02)
-    ]
-    raw_data = []
-    for mu, weight in components:
-        count = int(n_samples * weight)
-        raw_data.extend(np.random.normal(mu, sigma_components, count))
-    
-    res = np.array(raw_data)
-    return np.clip(res, 2800, 20000)
-
-consumer_loads_synthetic = generate_synthetic_data()
-
-# ==========================================================
-# SZÁMÍTÁSI MOTOR (Kiterjesztve az órás adatok visszaadásával)
+# SZÁMÍTÁSI MOTOR
 # ==========================================================
 def calculate_all_scenarios(tou_mag, red_count, white_count, tou_blocks, return_hourly=False, plot_year=2017, shift_ratio=0.3, skala=3000):
     results_list = []
-    
-    # Mentjük a plot_year-hez szükséges órás tömböket, ha azt is kéri a kód
     hourly_data = {}
 
     for year in YEARS:
         y_idx = list(YEARS).index(year) + 1
-        price = piac[:, y_idx] * euro[:, y_idx] / 1000
+        price = piac[:, y_idx].astype(float) * euro[:, y_idx].astype(float) / 1000
+        price_eur = piac[:, y_idx].astype(float)
         load_unit = eon_excel[:, y_idx] / 1000
         n_hours = len(price)
         n_days = n_hours // 24
@@ -94,7 +72,6 @@ def calculate_all_scenarios(tou_mag, red_count, white_count, tou_blocks, return_
             else: tou_tariff[:, s:e] /= tou_mag
         tou_tariff = tou_tariff.flatten()
 
-        # Fogyasztáseltolási belső függvény az órás logikához
         def shift_consumption(load_vec, t_vec, s_rat):
             l_mat = load_vec[:n_days*24].reshape(n_days, 24).copy()
             t_mat = t_vec[:n_days*24].reshape(n_days, 24)
@@ -104,10 +81,10 @@ def calculate_all_scenarios(tou_mag, red_count, white_count, tou_blocks, return_
             l_mat += (~expensive_mask * (removed / np.where(np.sum(~expensive_mask, axis=1)>0, np.sum(~expensive_mask, axis=1), 1))[:, None])
             return l_mat.flatten()
 
-        # Ha csak a heti/órás adatokat kérjük egy konkrét évre (gyorsításképp)
         if return_hourly and year == plot_year:
             eon_scaled = (eon_excel[:, y_idx] * skala / 1000)
             hourly_data['piac'] = price
+            hourly_data['piac_eur'] = price_eur
             hourly_data['edf_tarifa'] = edf_tariff
             hourly_data['tou_tarifa'] = tou_tariff
             hourly_data['eon_orig'] = eon_scaled
@@ -123,236 +100,111 @@ def calculate_all_scenarios(tou_mag, red_count, white_count, tou_blocks, return_
                 l_mat[expensive_mask] *= (1 - s_ratio)
                 l_mat += (~expensive_mask * (removed / np.where(np.sum(~expensive_mask, axis=1)>0, np.sum(~expensive_mask, axis=1), 1))[:, None])
                 return np.nansum(l_mat.flatten() * t_vec)
-
-            results_list.append({
-                'Év': year, 'Rugalmasság': f"{int(s_ratio*100)}%", 
-                'EDF_UC': get_cost(edf_tariff), 'TOU_UC': get_cost(tou_tariff)
-            })
+            results_list.append({'Év': year, 'Rugalmasság': f"{int(s_ratio*100)}%", 'EDF_UC': get_cost(edf_tariff), 'TOU_UC': get_cost(tou_tariff)})
             
-    if return_hourly:
-        return pd.DataFrame(results_list), hourly_data
+    if return_hourly: return pd.DataFrame(results_list), hourly_data
     return pd.DataFrame(results_list)
 
+@st.cache_data
+def generate_synthetic_data():
+    res = []
+    components = [(3800, 0.26), (5600, 0.28), (7400, 0.21), (9200, 0.06), (11000, 0.06), (12800, 0.02), (14600, 0.06), (16400, 0.02)]
+    for mu, weight in components: res.extend(np.random.normal(mu, 900, int(10000 * weight)))
+    return np.clip(np.array(res), 2800, 20000)
+
+consumer_loads_synthetic = generate_synthetic_data()
+
 # ==========================================================
-# STREAMLIT OLDALSÁV (SIDEBAR) - GLOBÁLIS BEÁLLÍTÁSOK
+# SIDEBAR
 # ==========================================================
-st.sidebar.header("⚙️ Globális Tarifa Beállítások")
+st.sidebar.header("⚙️ Globális Beállítások")
+txt_tou_mag = st.sidebar.number_input("TOU szorzó", 1.0, 5.0, 1.5, 0.1)
+txt_red = st.sidebar.number_input("Piros napok", 0, 150, 22)
+txt_white = st.sidebar.number_input("Fehér napok", 0, 150, 43)
+tou_blocks_status = [st.sidebar.checkbox("0-8h", False), st.sidebar.checkbox("8-16h", False), st.sidebar.checkbox("16-24h", True)]
 
-txt_tou_mag = st.sidebar.number_input("TOU szorzó (magasság)", min_value=1.0, max_value=5.0, value=1.5, step=0.1)
-txt_red = st.sidebar.number_input("Piros napok száma (EDF)", min_value=0, max_value=150, value=22)
-txt_white = st.sidebar.number_input("Fehér napok száma (EDF)", min_value=0, max_value=150, value=43)
-
-st.sidebar.subheader("TOU Időblokkok aktív szorzója")
-ch08 = st.sidebar.checkbox("0-8h", value=False)
-ch816 = st.sidebar.checkbox("8-16h", value=False)
-ch1624 = st.sidebar.checkbox("16-24h", value=True)
-tou_blocks_status = [ch08, ch816, ch1624]
-
-# Minden fülhöz szükséges alap futtatás (Éves szintű eredmények)
 df_unit = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_status)
 
 # ==========================================================
-# FÜLEK (TABS) LÉTREHOZÁSA
+# TABS
 # ==========================================================
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Éves Boxplotok", 
-    "⏱️ Órás Heti Profil (168 óra)", 
-    "📈 Fogyasztási Eloszlás (KDE)", 
-    "💾 Excel Export"
-])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Éves Boxplotok", "⏱️ Heti Profil", "📈 Piaci Áringadozás", "💾 Export & Háttér"])
 
-# ----------------------------------------------------------
-# 1. FÜL: ÉVES BOXPLOT DIAGRAMOK
-# ----------------------------------------------------------
+# --- TAB 1 ---
 with tab1:
-    st.subheader("Szimulációs Eredmények (Boxplot diagramok)")
-    
+    st.subheader("Szimulációs Eredmények (Pénzügyi hatás)")
     final_data = []
     for _, row in df_unit.iterrows():
-        edf_part = pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['EDF_UC'], 'Modell': 'EDF'})
-        tou_part = pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['TOU_UC'], 'Modell': 'TOU'})
-        final_data.extend([edf_part, tou_part])
+        final_data.extend([pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['EDF_UC'], 'Modell': 'EDF'}),
+                          pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['TOU_UC'], 'Modell': 'TOU'})])
     df_plot = pd.concat(final_data)
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
-
-    for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['CPP (EDF Tempo jellegű)', 'TOU Rendszer'], ['viridis', 'magma']):
-        sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], 
-                    palette=pal, showfliers=False, ax=ax)
-        ax.set_title(title, fontweight='bold', fontsize=12)
-        ax.set_ylabel("Éves számla [Ft]")
-        ax.legend(title="Rugalmasság", loc='upper left', fontsize='x-small', ncol=4)
-        ax.grid(axis='y', alpha=0.15)
+    fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+    for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['CPP (EDF Tempo)', 'TOU Rendszer'], ['viridis', 'magma']):
+        sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], palette=pal, showfliers=False, ax=ax)
         ax.axhline(y=36*np.median(consumer_loads_synthetic), color='black', ls='--', alpha=0.3)
-        ax.set_ylim(0, 1e6)
+        ax.set_title(title, fontweight='bold')
+    st.pyplot(fig1)
 
-    plt.tight_layout()
-    st.pyplot(fig)
-
-# ----------------------------------------------------------
-# 2. FÜL: ÓRÁS HETI PROFIL (Kért funkció beépítése)
-# ----------------------------------------------------------
+# --- TAB 2 ---
 with tab2:
-    st.subheader("Órás szintű heti profil vizualizáció (168 óra)")
-    st.write("Vizsgáld meg tetszőlegesen kiválasztott órában a tarifák és a fogyasztás áthelyeződésének dinamikáját.")
-    
-    # Lokális vezérlők ehhez a fülhöz
+    st.subheader("Órás szintű heti profil")
     col1, col2, col3 = st.columns(3)
-    with col1:
-        selected_year = st.selectbox("Szimulált év kiválasztása", options=list(YEARS), index=2) # Alapértelmezett: 2017
-    with col2:
-        skala_input = st.number_input("Skála (Fogyasztás kWh/év):", min_value=1000, max_value=10000, value=3000, step=500)
-    with col3:
-        shift_input = st.slider("Shift ratio (Rugalmasság 0-1):", min_value=0.0, max_value=1.0, value=0.3, step=0.05)
-
-    # DÁTUM ÉS ÓRA VÁLASZTÓ (A csúszka helyett)
-    st.write("**Kezdő időpont kiválasztása:**")
+    sel_year = col1.selectbox("Év", list(YEARS), index=2)
+    skala_in = col2.number_input("Skála (kWh/év)", 1000, 10000, 3000, 500)
+    shift_in = col3.slider("Rugalmasság", 0.0, 1.0, 0.3)
+    
     d_col1, d_col2 = st.columns(2)
+    sel_date = d_col1.date_input("Nap", pd.to_datetime(f"{sel_year}-10-15").date())
+    sel_hour = d_col2.number_input("Óra", 0, 23, 12)
+    start_h = int((pd.to_datetime(f"{sel_date} {sel_hour}:00") - pd.to_datetime(f"{sel_year}-01-01")).total_seconds() // 3600)
     
-    with d_col1:
-        # A naptár minimum és maximum dátuma igazodik a kiválasztott évhez
-        selected_date = st.date_input(
-            "Válaszd ki a napot:",
-            value=pd.to_datetime(f"{selected_year}-10-15").date(),
-            min_value=pd.to_datetime(f"{selected_year}-01-01").date(),
-            max_value=pd.to_datetime(f"{selected_year}-12-25").date() # dec 25 a max, hogy beleférjen még 176 óra az évbe
-        )
-    with d_col2:
-        selected_hour = st.number_input("Kezdő óra (0-23):", min_value=0, max_value=23, value=12, step=1)
-
-    # Kiszámoljuk, hogy a kiválasztott dátum és óra az év hányadik órája (0-8760 között)
-    base_date = pd.to_datetime(f"{selected_year}-01-01")
-    target_date = pd.to_datetime(f"{selected_date} {selected_hour}:00:00")
+    st.write("**Görbék:**")
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    s_p, s_c, s_t, s_o, s_se, s_st = c1.checkbox("Piac", True), c2.checkbox("CPP", True), c3.checkbox("TOU", True), c4.checkbox("Orig", True), c5.checkbox("S-CPP", True), c6.checkbox("S-TOU", True)
     
-    # A timedelta segítségével megkapjuk az eltelt órák számát
-    start_hour = int((target_date - base_date).total_seconds() // 3600)
-    end_hour = start_hour + 168
-    
-# Láthatósági beállítások Streamlit checkboxokkal (Szétbontva a módosított fogyasztások)
-    st.write("**Görbék ki-be kapcsolása:**")
-    c_col1, c_col2, c_col3, c_col4, c_col5, c_col6 = st.columns(6)
-    show_piac = c_col1.checkbox("Piaci ár", value=True)
-    show_cpp = c_col2.checkbox("CPP (EDF) ár", value=True)
-    show_tou = c_col3.checkbox("TOU ár", value=True)
-    show_orig_load = c_col4.checkbox("Eredeti fogyasztás", value=True)
-    show_shifted_edf = c_col5.checkbox("Módosított CPP (EDF)", value=True)  # Új külön gomb
-    show_shifted_tou = c_col6.checkbox("Módosított TOU", value=True)      # Új külön gomb
-
-    # Számítás elvégzése az órás adatok kinyerésével
-    _, hourly = calculate_all_scenarios(
-        txt_tou_mag, txt_red, txt_white, tou_blocks_status, 
-        return_hourly=True, plot_year=selected_year, shift_ratio=shift_input, skala=skala_input
-    )
-
-    # Szeletek kivágása (1 hét = 168 óra)
-    v_slice = hourly['piac'][start_hour:end_hour]
-    cpp_slice = hourly['edf_tarifa'][start_hour:end_hour]
-    tou_slice = hourly['tou_tarifa'][start_hour:end_hour]
-    eon_orig_slice = hourly['eon_orig'][start_hour:end_hour]
-    eon_shift_edf_slice = hourly['eon_shifted_edf'][start_hour:end_hour]
-    eon_shift_tou_slice = hourly['eon_shifted_tou'][start_hour:end_hour]
-
-    # Grafikon felépítése
-    fig3, ax_p = plt.subplots(figsize=(14, 6))
-    ax_l = ax_p.twinx()
-
-    # Árak kirajzolása (Bal tengely)
-    if show_piac:
-        ax_p.plot(v_slice, label="Piaci ár", color="blue", alpha=0.3)
-    if show_cpp:
-        ax_p.plot(cpp_slice, label="CPP ár (EDF)", color="orange", linewidth=2)
-    if show_tou:
-        ax_p.plot(tou_slice, label="TOU ár", color="purple", linewidth=2)
-    ax_p.set_ylabel("Áramár [Ft/kWh]", color="blue")
-    ax_p.tick_params(axis='y', labelcolor="blue")
-
-    # Terhelések kirajzolása (Jobb tengely - most már egyesével kapcsolható)
-    if show_orig_load:
-        ax_l.plot(eon_orig_slice, label="Eredeti fogyasztás", color="green", alpha=0.7)
-    if show_shifted_edf:
-        ax_l.plot(eon_shift_edf_slice, label="Módosított fogyasztás (CPP)", color="red", linewidth=1.5)
-    if show_shifted_tou:
-        ax_l.plot(eon_shift_tou_slice, label="Módosított fogyasztás (TOU)", color="crimson", linewidth=1.5)
-    ax_l.set_ylabel("Fogyasztás [kWh]", color="green")
-    ax_l.tick_params(axis='y', labelcolor="green")
-
-    # Közös formázás
-    ax_p.set_title(f"Tarifarendszerek és lakossági reakciók összehasonlítása ({selected_year}, {selected_date} {selected_hour}:00-tól, 1 hét)", fontweight='bold')
-    ax_p.set_xlim(0, 168)
-    ax_p.set_xticks(range(0, 169, 24))
-    ax_p.set_xlabel("Eltelt órák a héten")
-    ax_p.grid(True, alpha=0.2)
-    
-    # Össvont legend kezelés
-    lines_p, labels_p = ax_p.get_legend_handles_labels()
-    lines_l, labels_l = ax_l.get_legend_handles_labels()
-    ax_p.legend(lines_p + lines_l, labels_p + labels_l, loc="upper left")
-
-    st.pyplot(fig3)
-
-# ----------------------------------------------------------
-# 3. FÜL: KDE DIAGRAM
-# ----------------------------------------------------------
-with tab3:
-    st.subheader("Fogyasztási Eloszlás Rekonstrukciója (KDE)")
-    
-    fig2, ax_kde = plt.subplots(figsize=(10, 4))
-    sns.histplot(consumer_loads_synthetic, bins=8, color='#88c488', edgecolor='black', stat="density", alpha=0.9, ax=ax_kde)
-    sns.kdeplot(consumer_loads_synthetic, color='green', linewidth=3, bw_adjust=1.5, ax=ax_kde)
-    ax_kde.set_xlim(2500, 18000)
-    ax_kde.set_xlabel("Éves fogyasztás [kWh]")
-    ax_kde.set_ylabel("Sűrűség (Részesedés)")
-    
-    plt.tight_layout()
+    _, hourly = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_status, True, sel_year, shift_in, skala_in)
+    fig2, axp = plt.subplots(figsize=(14, 6))
+    axl = axp.twinx()
+    sl = slice(start_h, start_h+168)
+    if s_p: axp.plot(hourly['piac'][sl], label="Piac", color="blue", alpha=0.3)
+    if s_c: axp.plot(hourly['edf_tarifa'][sl], label="CPP", color="orange")
+    if s_t: axp.plot(hourly['tou_tarifa'][sl], label="TOU", color="purple", ls=":")
+    if s_o: axl.plot(hourly['eon_orig'][sl], label="Orig", color="green", ls="--")
+    if s_se: axl.plot(hourly['eon_shifted_edf'][sl], label="S-CPP", color="red")
+    if s_st: axl.plot(hourly['eon_shifted_tou'][sl], label="S-TOU", color="crimson", ls="-.")
     st.pyplot(fig2)
 
-# ----------------------------------------------------------
-# 4. FÜL: EXCEL GENERÁLÁS ÉS ADATOK
-# ----------------------------------------------------------
+# --- TAB 3 (ÚJ: Piaci Áringadozás) ---
+with tab3:
+    st.subheader("Villamosenergia piaci ár eloszlása óránként")
+    sel_year_market = st.selectbox("Év kiválasztása az elemzéshez:", list(YEARS), index=len(YEARS)-1, key="market_year")
+    
+    # Adatok előkészítése a boxplot-hoz
+    y_idx_m = list(YEARS).index(sel_year_market) + 1
+    p_eur = piac[:, y_idx_m].astype(float)
+    p_eur = p_eur[~np.isnan(p_eur)]
+    hrs = np.arange(len(p_eur)) % 24
+    df_market = pd.DataFrame({'Óra': hrs, 'Ár': p_eur})
+    
+    fig3, ax_m = plt.subplots(figsize=(12, 6))
+    sns.boxplot(x='Óra', y='Ár', data=df_market, showfliers=False, ax=ax_m, palette="Blues")
+    ax_m.set_title(f"Piaci ár eloszlása óránként - {sel_year_market} [Eur/MWh]", fontsize=16, fontweight='bold')
+    ax_m.set_xlabel("A nap órája (0-23)", fontsize=12)
+    ax_m.set_ylabel("Ár [Eur/MWh]", fontsize=12)
+    ax_m.grid(axis='y', linestyle=':', alpha=0.6)
+    plt.tight_layout()
+    st.pyplot(fig3)
+    st.info("Ez az ábra szemlélteti a napon belüli volatilitást. Ahol nagyok a dobozok, ott a legnagyobb az árak bizonytalansága.")
+
+# --- TAB 4 ---
 with tab4:
-    st.subheader("Adatok Exportálása TDK dolgozathoz")
-
-    df_unit['Rugalmasság_num'] = df_unit['Rugalmasság'].str.replace('%', '').astype(int)
-    stats_data = []
-    for _, row in df_unit.iterrows():
-        bills_edf = consumer_loads_synthetic * row['EDF_UC']
-        bills_tou = consumer_loads_synthetic * row['TOU_UC']
-        stats_data.append({
-            'Rendszer': 'EDF', 'Év': row['Év'], 'Rugalmasság_érték': row['Rugalmasság_num'], 'Rugalmasság (%)': row['Rugalmasság'],
-            'Alsó kvartilis (Q1) [Ft]': np.percentile(bills_edf, 25), 'Medián [Ft]': np.percentile(bills_edf, 50),
-            'Felső kvartilis (Q3) [Ft]': np.percentile(bills_edf, 75), 'Átlag [Ft]': np.mean(bills_edf)
-        })
-        stats_data.append({
-            'Rendszer': 'TOU', 'Év': row['Év'], 'Rugalmasság_érték': row['Rugalmasság_num'], 'Rugalmasság (%)': row['Rugalmasság'],
-            'Alsó kvartilis (Q1) [Ft]': np.percentile(bills_tou, 25), 'Medián [Ft]': np.percentile(bills_tou, 50),
-            'Felső kvartilis (Q3) [Ft]': np.percentile(bills_tou, 75), 'Átlag [Ft]': np.mean(bills_tou)
-        })
-    df_final_stats = pd.DataFrame(stats_data)
-
-    median_list = []
-    fix_median_val = 36 * np.median(consumer_loads_synthetic)
-    for year in YEARS:
-        year_row = {'Év': year, 'Fix_36Ft_Median': fix_median_val}
-        year_data = df_unit[df_unit['Év'] == year]
-        for _, row in year_data.iterrows():
-            r_label = row['Rugalmasság']
-            year_row[f'EDF_{r_label}'] = np.median(consumer_loads_synthetic * row['EDF_UC'])
-            year_row[f'TOU_{r_label}'] = np.median(consumer_loads_synthetic * row['TOU_UC'])
-        median_list.append(year_row)
-    df_medians_summary = pd.DataFrame(median_list)
-
+    st.subheader("Háttérstatisztika és Export")
+    fig4, ax_kde = plt.subplots(figsize=(10, 4))
+    sns.histplot(consumer_loads_synthetic, bins=8, color='#88c488', stat="density", ax=ax_kde)
+    sns.kdeplot(consumer_loads_synthetic, color='green', linewidth=3, bw_adjust=1.5, ax=ax_kde)
+    st.pyplot(fig4)
+    
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        df_final_stats[df_final_stats['Rendszer'] == 'EDF'].to_excel(writer, sheet_name='EDF_Reszletes', index=False)
-        df_final_stats[df_final_stats['Rendszer'] == 'TOU'].to_excel(writer, sheet_name='TOU_Reszletes', index=False)
-        df_medians_summary.to_excel(writer, sheet_name='Osszesitett_Medianok', index=False)
-
-    st.write("### Összesitett Mediánok Előnézete:")
-    st.dataframe(df_medians_summary.head(5))
-
-    st.download_button(
-        label="📊 Teljes Excel Statisztika Letöltése",
-        data=buffer.getvalue(),
-        file_name="Energia_Szamla_Statisztika.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        df_unit.to_excel(writer, sheet_name='Eredmenyek', index=False)
+    st.download_button("📊 Excel Letöltése", buffer.getvalue(), "statisztika.xlsx")
