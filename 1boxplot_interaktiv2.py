@@ -117,7 +117,7 @@ consumer_loads_synthetic = generate_synthetic_data()
 # ==========================================================
 # SIDEBAR
 # ==========================================================
-st.sidebar.header("⚙️ Globális Beállítások")
+st.sidebar.header("Globális Beállítások")
 txt_tou_mag = st.sidebar.number_input("TOU szorzó", 1.0, 5.0, 1.5, 0.1)
 txt_red = st.sidebar.number_input("Piros napok", 0, 150, 22)
 txt_white = st.sidebar.number_input("Fehér napok", 0, 150, 43)
@@ -128,7 +128,7 @@ df_unit = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_st
 # ==========================================================
 # TABS
 # ==========================================================
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Éves Boxplotok", "⏱️ Heti Profil", "📈 Piaci Áringadozás", "💾 Export & Háttér"])
+tab1, tab2, tab3, tab4 = st.tabs(["Éves Boxplotok", "Heti Profil", "Piaci Áringadozás", "Export & Háttér"])
 
 # --- TAB 1 ---
 with tab1:
@@ -187,14 +187,13 @@ with tab3:
     df_market = pd.DataFrame({'Óra': hrs, 'Ár': p_eur})
     
     fig3, ax_m = plt.subplots(figsize=(12, 6))
-    sns.boxplot(x='Óra', y='Ár', data=df_market, showfliers=False, ax=ax_m, palette="Blues")
+    sns.boxplot(x='Óra', y='Ár', data=df_market, showfliers=False, ax=ax_m)
     ax_m.set_title(f"Piaci ár eloszlása óránként - {sel_year_market} [Eur/MWh]", fontsize=16, fontweight='bold')
     ax_m.set_xlabel("A nap órája (0-23)", fontsize=12)
     ax_m.set_ylabel("Ár [Eur/MWh]", fontsize=12)
     ax_m.grid(axis='y', linestyle=':', alpha=0.6)
     plt.tight_layout()
     st.pyplot(fig3)
-    st.info("Ez az ábra szemlélteti a napon belüli volatilitást. Ahol nagyok a dobozok, ott a legnagyobb az árak bizonytalansága.")
 
 # --- TAB 4 ---
 with tab4:
