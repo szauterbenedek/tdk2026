@@ -14,11 +14,12 @@ st.write("Dinamikus tarifarendszerek és lakossági fogyasztói válaszok szimul
 st.markdown("""
     <style>
     .custom-yap-box {
-        background-color: #f8f9fa; /* Halványszürke/fehér háttér */
+        background-color: #000000; /* Halványszürke/fehér háttér */
+        
         border-left: 5px solid #005088; /* A BME kék színe */
         padding: 20px;
         border-radius: 5px;
-        color: #333;
+        color: #FFFFFF;
         margin-top: 10px;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
