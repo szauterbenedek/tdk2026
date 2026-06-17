@@ -171,9 +171,9 @@ with tab2:
     def render_interactive_plots(hourly_data, time_slice):
         c1, c2, c3, c4 = st.columns(4)
         s_p = c1.checkbox("Piaci ár mutatása", True)
-        s_o = c2.checkbox("Eredeti fogyasztás (Orig) mutatása", True)
-        s_se = c3.checkbox("Módosított CPP mutatása", True)
-        s_st = c4.checkbox("Módosított TOU mutatása", True)
+        s_o = c2.checkbox("Eredeti fogyasztás mutatása", True)
+        s_se = c3.checkbox("Módosított kritikus csúcs mutatása", True)
+        s_st = c4.checkbox("Módosított időszakos szabályozás mutatása", True)
         
         # Szeletek előkészítése
         v_s = hourly_data['piac'][time_slice]
@@ -243,7 +243,7 @@ with tab2:
             ax_l2.tick_params(axis='y', labelcolor="crimson")
             
             # Elrendezés és Legend
-            ax_p2.set_title("(Időszakos rendszer profilja", fontweight='bold')
+            ax_p2.set_title("Időszakos rendszer profilja", fontweight='bold')
             ax_p2.set_xlim(0, 168)
             ax_p2.set_xticks(range(0, 169, 24))
             ax_p2.grid(True, alpha=0.15)
