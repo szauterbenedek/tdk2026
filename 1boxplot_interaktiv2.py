@@ -245,7 +245,7 @@ with tab2:
                 ax_l1.plot(eon_cpp_s, label="Módosított kritikus csúcs melletti fogy.", color="green", linewidth=1)
             ax_l1.set_ylabel("Fogyasztás [kW]", color="black")
             ax_l1.tick_params(axis='y', labelcolor="black")
-            ax.l1.set_ylim(0, 1)
+            ax_l1.set_ylim(0, 1)
             
             # Elrendezés és Legend
             ax_p1.set_title("Kritikus csúcs rendszer profilja", fontweight='bold')
