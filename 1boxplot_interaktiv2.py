@@ -11,7 +11,19 @@ import io
 st.set_page_config(page_title="Rezsi Kalkulátor - TDK", layout="wide")
 st.title("Lakossági Rezsi Kalkulátor & Piaci Elemzés")
 st.write("Dinamikus tarifarendszerek és lakossági fogyasztói válaszok szimulációja.")
-
+st.markdown("""
+    <style>
+    .custom-yap-box {
+        background-color: #f8f9fa; /* Halványszürke/fehér háttér */
+        border-left: 5px solid #005088; /* A BME kék színe */
+        padding: 20px;
+        border-radius: 5px;
+        color: #333;
+        margin-top: 10px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
 # =========================
 # ADATOK BETÖLTÉSE
 # =========================
@@ -134,16 +146,21 @@ tab1, tab2, tab3, tab4 = st.tabs(["Éves Boxplotok", "Heti Profil", "Piaci Árin
 with tab1:
     st.subheader("A dinamikus tarifarendszerek pénzügyi hatása a fogyasztókra")
     final_data = []
-    
-    st.info("""A grafikonon összehasonlíthatjuk a két vizsgált tarifarandszer hatását egy általunk kiválasztott fogyasztóra. Célunk egy olyan rendszer kialakítása, 
+
+    st.markdown("""
+    <div class="custom-yap-box">
+    A grafikonon összehasonlíthatjuk a két vizsgált tarifarandszer hatását egy általunk kiválasztott fogyasztóra. Célunk egy olyan rendszer kialakítása, 
     amivel nem kényszerítjük a lakosságot fogyasztásuk módosítására, hanem lehetőséget adunk nekik pénzügyi megtakarítás elérésére. Ahhoz, hogy ezt a célunkat 
     szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére (ez a 
     szaggatott vonal). A grafikonok elkészítésekor a Háttér oldalon látható fogyaszói eloszlást feltételeztünk, a számításokat pedig egy 10000 fős populációra 
     végeztük el.
     A számításokat négy rugalmassági szinten értékeltük ki (0%, 10%, 20%, 30%), és ezeket közösen ábrázoltuk. A tarifarendszereknek adtunk egy-egy kezdeti 
     állapotot, amelyek tetszőlegesen módosíthatóak a bal oldali kezelőfelületen. A kritikus csúcs tarifarendszer alaphelyzete egyébként a gyakorlatban is 
-    használt, francia EDF Tempo rendszer, amely kék, fehér és piros napokat különböztetnek meg az évben, erről bővebben a Háttér oldalon olvashatnak.""")
+    használt, francia EDF Tempo rendszer, amely kék, fehér és piros napokat különböztetnek meg az évben, erről bővebben a Háttér oldalon olvashatnak.
+    </div>
+""", unsafe_allow_html=True)
     
+ 
     for _, row in df_unit.iterrows():
         final_data.extend([pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['EDF_UC'], 'Modell': 'EDF'}),
                           pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['TOU_UC'], 'Modell': 'TOU'})])
@@ -155,10 +172,16 @@ with tab1:
         ax.set_title(title, fontweight='bold')
     st.pyplot(fig1)
 
-    st.info("""A tarifarendszereket próbálgatva feltűnő, hogy míg a kritikus csúcs tarifarendszer kitüntetett napok (piros és fehér) számát drasztikusan kell növelni, 
+    st.markdown("""
+    <div class="custom-yap-box">
+    A tarifarendszereket próbálgatva feltűnő, hogy míg a kritikus csúcs tarifarendszer kitüntetett napok (piros és fehér) számát drasztikusan kell növelni, 
     hogy a rugalmas fogyasztók érzékelhetően jobban járjanak, mint a nem rugalmasak, addig az időszakos árszabályozás jelentős megtakarítást hoz, már minimális
     beavatkozás esetén is. Ennek oka, hogy a két rendszert alapvetően más célra találták ki: a kritikus csúcs szabályozás egy-egy nap kritikus csúcs óráit hivatott
-    csökkenteni, míg az időszakos szabályozás folyamatosan érvényben van, és így megfelelő tudatossággal minden nap elérhető megtakarítás.""")
+    csökkenteni, míg az időszakos szabályozás folyamatosan érvényben van, és így megfelelő tudatossággal minden nap elérhető megtakarítás.
+    </div>
+""", unsafe_allow_html=True)
+    
+
 
 
 # --- TAB 2 ---
