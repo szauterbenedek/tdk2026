@@ -207,3 +207,26 @@ with tab4:
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         df_unit.to_excel(writer, sheet_name='Eredmenyek', index=False)
     st.download_button("📊 Excel Letöltése", buffer.getvalue(), "statisztika.xlsx")
+
+# ==========================================================
+# LÁBLÉC (FOOTER) - LOGÓKKAL ÉS COPYRIGHTTAL
+# ==========================================================
+st.markdown("---") # Egy elválasztó vonal
+col_f1, col_f2 = st.columns([1, 3])
+
+with col_f1:
+    # Itt a képek URL-jét kell megadnod. 
+    # Tipp: Ha a logók a GitHubon vannak, használd a raw URL-t!
+    st.image("BME_logo_transparent_0.png", width=100)
+    st.image("bme_nti_logo_white-250x125.png", width=100)
+
+with col_f2:
+    st.markdown("""
+    ### BME Nukleáris Technikai Intézet (NTI)
+    **Kutatási Projekt: Dinamikus Lakossági Tarifarendszerek**
+    
+    © 2026 Szauter Benedek. Minden jog fenntartva.
+    
+    Ez a dashboard a BME NTI keretein belül végzett TDK kutatás részeként készült. 
+    A felhasznált piaci adatok forrása: [HUPX/Eurostat].
+    """)
