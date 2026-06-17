@@ -138,7 +138,7 @@ with tab1:
         final_data.extend([pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['EDF_UC'], 'Modell': 'EDF'}),
                           pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['TOU_UC'], 'Modell': 'TOU'})])
     df_plot = pd.concat(final_data)
-    fig1, (ax1, ax2) = plt.subbplots(2, 1, figsize=(14, 8), sharex=True)
+    fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
     for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['Kritikus csúcs (EDF Tempo)', 'Időszakos árszabályozás'], ['viridis', 'magma']):
         sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], palette=pal, showfliers=False, ax=ax)
         ax.axhline(y=36*np.median(consumer_loads_synthetic), color='black', ls='--', alpha=0.3)
