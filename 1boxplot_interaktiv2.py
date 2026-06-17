@@ -132,18 +132,25 @@ tab1, tab2, tab3, tab4 = st.tabs(["Éves Boxplotok", "Heti Profil", "Piaci Árin
 
 # --- TAB 1 ---
 with tab1:
-    st.subheader("Szimulációs Eredmények (Pénzügyi hatás)")
+    st.subheader("A dinamikus tarifarendszerek pénzügyi hatása a fogyasztókra")
     final_data = []
     for _, row in df_unit.iterrows():
         final_data.extend([pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['EDF_UC'], 'Modell': 'EDF'}),
                           pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['TOU_UC'], 'Modell': 'TOU'})])
     df_plot = pd.concat(final_data)
-    fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+    fig1, (ax1, ax2) = plt.subbplots(2, 1, figsize=(14, 8), sharex=True)
     for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['Kritikus csúcs (EDF Tempo)', 'Időszakos árszabályozás'], ['viridis', 'magma']):
         sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], palette=pal, showfliers=False, ax=ax)
         ax.axhline(y=36*np.median(consumer_loads_synthetic), color='black', ls='--', alpha=0.3)
         ax.set_title(title, fontweight='bold')
     st.pyplot(fig1)
+
+    st.info("""A grafikonon összehasonlíthatjuk a két vizsgált tarifarandszer hatását egy általunk kiválasztott fogyasztóra. Célunk egy olyan rendszer kialakítása, 
+    amivel nem kényszerítjük a lakosságot fogyasztásuk módosítására, hanem 
+    
+    
+    lehetőséget adunk nekik pénzügyi megtakarítás elérésére. Ahhoz, hogy ezt a célunkat 
+    szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére."""
 
 # --- TAB 2 ---
 with tab2:
