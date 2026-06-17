@@ -148,6 +148,8 @@ with tab1:
 # --- TAB 2 ---
 with tab2:
     st.subheader("Órás szintű heti profil")
+    
+    # 1. SZINT: Bemeneti paraméterek (Minden, ami nehéz számítást igényel)
     col1, col2, col3 = st.columns(3)
     sel_year = col1.selectbox("Év", list(YEARS), index=2)
     skala_in = col2.number_input("Skála (kWh/év)", 1000, 10000, 3000, 500)
@@ -156,23 +158,105 @@ with tab2:
     d_col1, d_col2 = st.columns(2)
     sel_date = d_col1.date_input("Nap", pd.to_datetime(f"{sel_year}-10-15").date())
     sel_hour = d_col2.number_input("Óra", 0, 23, 12)
+    
     start_h = int((pd.to_datetime(f"{sel_date} {sel_hour}:00") - pd.to_datetime(f"{sel_year}-01-01")).total_seconds() // 3600)
-    
-    st.write("**Görbék:**")
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    s_p, s_c, s_t, s_o, s_se, s_st = c1.checkbox("Piac", True), c2.checkbox("CPP", True), c3.checkbox("TOU", True), c4.checkbox("Orig", True), c5.checkbox("S-CPP", True), c6.checkbox("S-TOU", True)
-    
-    _, hourly = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_status, True, sel_year, shift_in, skala_in)
-    fig2, axp = plt.subplots(figsize=(14, 6))
-    axl = axp.twinx()
     sl = slice(start_h, start_h+168)
-    if s_p: axp.plot(hourly['piac'][sl], label="Piac", color="blue", alpha=0.3)
-    if s_c: axp.plot(hourly['edf_tarifa'][sl], label="CPP", color="orange")
-    if s_t: axp.plot(hourly['tou_tarifa'][sl], label="TOU", color="purple", ls=":")
-    if s_o: axl.plot(hourly['eon_orig'][sl], label="Orig", color="green", ls="--")
-    if s_se: axl.plot(hourly['eon_shifted_edf'][sl], label="S-CPP", color="red")
-    if s_st: axl.plot(hourly['eon_shifted_tou'][sl], label="S-TOU", color="crimson", ls="-.")
-    st.pyplot(fig2)
+    
+    # A nehéz matematikai számítást CSAK akkor futtatjuk újra, ha a fenti paraméterek változnak
+    _, hourly = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_status, True, sel_year, shift_in, skala_in)
+
+    # 2. SZINT: Interaktív görbe-megjelenítés újrafutás-gátló fragmentben
+    # Az ezen a dekorátoron belüli checkboxok kattintása NEM futtatja újra a fenti modellt!
+    @st.fragment
+    def render_interactive_plots(hourly_data, time_slice):
+        st.write("**Görbék ki-be kapcsolása (Azonnali válasz):**")
+        c1, c2, c3, c4 = st.columns(4)
+        s_p = c1.checkbox("Piaci ár mutatása", True)
+        s_o = c2.checkbox("Eredeti fogyasztás (Orig) mutatása", True)
+        s_se = c3.checkbox("Módosított CPP mutatása", True)
+        s_st = c4.checkbox("Módosított TOU mutatása", True)
+        
+        # Szeletek előkészítése
+        v_s = hourly_data['piac'][time_slice]
+        cpp_s = hourly_data['edf_tarifa'][time_slice]
+        tou_s = hourly_data['tou_tarifa'][time_slice]
+        eon_s = hourly_data['eon_orig'][time_slice]
+        eon_cpp_s = hourly_data['eon_shifted_edf'][time_slice]
+        eon_tou_s = hourly_data['eon_shifted_tou'][time_slice]
+        
+        # Két grafikon egymás mellett
+        g_col1, g_col2 = st.columns(2)
+        
+        # ----------------------------------------------------------
+        # BAL OLDAL: CPP (EDF TEMPO) PLOT
+        # ----------------------------------------------------------
+        with g_col1:
+            fig_cpp, ax_p1 = plt.subplots(figsize=(8, 4.5))
+            ax_l1 = ax_p1.twinx()
+            
+            # Árak (Bal tengely)
+            if s_p: 
+                ax_p1.plot(v_s, label="Piaci ár", color="blue", alpha=0.25, linewidth=1)
+            ax_p1.plot(cpp_s, label="CPP tarifa (EDF)", color="orange", linewidth=2.5)
+            ax_p1.set_ylabel("Áramár [Ft/kWh]", color="orange")
+            ax_p1.tick_params(axis='y', labelcolor="orange")
+            
+            # Fogyasztások (Jobb tengely)
+            if s_o: 
+                ax_l1.plot(eon_s, label="Eredeti fogyasztás", color="green", ls="--", alpha=0.25, linewidth=1)
+            if s_se: 
+                ax_l1.plot(eon_cpp_s, label="Módosított CPP fogy.", color="red", linewidth=2)
+            ax_l1.set_ylabel("Fogyasztás [kWh]", color="red")
+            ax_l1.tick_params(axis='y', labelcolor="red")
+            
+            # Elrendezés és Legend
+            ax_p1.set_title("CPP (Kritikus Csúcsidős) Rendszer Profilja", fontweight='bold')
+            ax_p1.set_xlim(0, 168)
+            ax_p1.set_xticks(range(0, 169, 24))
+            ax_p1.grid(True, alpha=0.15)
+            
+            h1, l1 = ax_p1.get_legend_handles_labels()
+            h2, l2 = ax_l1.get_legend_handles_labels()
+            ax_p1.legend(h1+h2, l1+l2, loc="upper left", fontsize='small')
+            
+            st.pyplot(fig_cpp)
+            
+        # ----------------------------------------------------------
+        # JOBB OLDAL: TOU PLOT
+        # ----------------------------------------------------------
+        with g_col2:
+            fig_tou, ax_p2 = plt.subplots(figsize=(8, 4.5))
+            ax_l2 = ax_p2.twinx()
+            
+            # Árak (Bal tengely)
+            if s_p: 
+                ax_p2.plot(v_s, label="Piaci ár", color="blue", alpha=0.25, linewidth=1)
+            ax_p2.plot(tou_s, label="TOU tarifa", color="purple", linewidth=2.5, ls="-")
+            ax_p2.set_ylabel("Áramár [Ft/kWh]", color="purple")
+            ax_p2.tick_params(axis='y', labelcolor="purple")
+            
+            # Fogyasztások (Jobb tengely)
+            if s_o: 
+                ax_l2.plot(eon_s, label="Eredeti fogyasztás", color="green", ls="--", alpha=0.25, linewidth=1)
+            if s_st: 
+                ax_l2.plot(eon_tou_s, label="Módosított TOU fogy.", color="crimson", linewidth=2)
+            ax_l2.set_ylabel("Fogyasztás [kWh]", color="crimson")
+            ax_l2.tick_params(axis='y', labelcolor="crimson")
+            
+            # Elrendezés és Legend
+            ax_p2.set_title("TOU (Időszakos) Rendszer Profilja", fontweight='bold')
+            ax_p2.set_xlim(0, 168)
+            ax_p2.set_xticks(range(0, 169, 24))
+            ax_p2.grid(True, alpha=0.15)
+            
+            h1, l1 = ax_p2.get_legend_handles_labels()
+            h2, l2 = ax_l2.get_legend_handles_labels()
+            ax_p2.legend(h1+h2, l1+l2, loc="upper left", fontsize='small')
+            
+            st.pyplot(fig_tou)
+
+    # Meghívjuk a renderelést
+    render_interactive_plots(hourly, sl)
 
 # --- TAB 3 (ÚJ: Piaci Áringadozás) ---
 with tab3:
