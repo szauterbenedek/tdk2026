@@ -181,9 +181,6 @@ with tab1:
     csökkenteni, míg az időszakos szabályozás folyamatosan érvényben van, és így megfelelő tudatossággal minden nap elérhető megtakarítás.
     </div>
 """, unsafe_allow_html=True)
-    
-
-
 
 # --- TAB 2 ---
 with tab2:
@@ -210,9 +207,9 @@ with tab2:
     @st.fragment
     def render_interactive_plots(hourly_data, time_slice):
         c1, c2, c3, c4 = st.columns(4)
-        s_p = c1.checkbox("Piaci ár mutatása", True)
-        s_o = c2.checkbox("Eredeti fogyasztás mutatása", True)
-        s_se = c3.checkbox("Módosított kritikus csúcs mutatása", True)
+        s_p = c1.checkbox("Piaci ár mutatása", False)
+        s_o = c2.checkbox("Eredeti fogyasztás mutatása", False)
+        s_se = c3.checkbox("Módosított kritikus csúcs szabályozás mutatása", True)
         s_st = c4.checkbox("Módosított időszakos szabályozás mutatása", True)
         
         # Szeletek előkészítése
@@ -236,7 +233,7 @@ with tab2:
             # Árak (Bal tengely)
             if s_p: 
                 ax_p1.plot(v_s, label="Piaci ár", color="blue", alpha=0.25, linewidth=1)
-            ax_p1.plot(cpp_s, label="Kritikus csúcs tarifa (EDF)", color="orange", linewidth=1)
+            ax_p1.plot(cpp_s, label="Kritikus csúcs tarifa (EDF)", color="red", linewidth=1)
             ax_p1.set_ylabel("Villamos energia ára [Ft/kWh]", color="black")
             ax_p1.tick_params(axis='y', labelcolor="black")
             
@@ -270,7 +267,7 @@ with tab2:
             # Árak (Bal tengely)
             if s_p: 
                 ax_p2.plot(v_s, label="Piaci ár", color="blue", alpha=0.25, linewidth=1)
-            ax_p2.plot(tou_s, label="Időszakos árszabályozás", color="purple", linewidth=1)
+            ax_p2.plot(tou_s, label="Időszakos árszabályozás", color="red", linewidth=1)
             ax_p2.set_ylabel("Villamos energia ára [Ft/kWh]", color="black")
             ax_p2.tick_params(axis='y', labelcolor="black")
             
@@ -278,7 +275,7 @@ with tab2:
             if s_o: 
                 ax_l2.plot(eon_s, label="Eredeti fogyasztás", color="green", ls="--", alpha=0.25, linewidth=1)
             if s_st: 
-                ax_l2.plot(eon_tou_s, label="Módosított időszakos árszabályozás melletti fogy.", color="crimson", linewidth=1)
+                ax_l2.plot(eon_tou_s, label="Módosított időszakos árszabályozás melletti fogy.", color="green", linewidth=1)
             ax_l2.set_ylabel("Fogyasztás [kWh]", color="black")
             ax_l2.tick_params(axis='y', labelcolor="black")
             
