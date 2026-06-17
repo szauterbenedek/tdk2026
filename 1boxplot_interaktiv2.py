@@ -209,24 +209,26 @@ with tab4:
     st.download_button("📊 Excel Letöltése", buffer.getvalue(), "statisztika.xlsx")
 
 # ==========================================================
-# LÁBLÉC (FOOTER) - LOGÓKKAL ÉS COPYRIGHTTAL
+# LÁBLÉC (FOOTER)
 # ==========================================================
-st.markdown("---") # Egy elválasztó vonal
-col_f1, col_f2 = st.columns([1, 3])
+st.markdown("---") # Elválasztó vonal
 
-with col_f1:
-    # Itt a képek URL-jét kell megadnod. 
-    # Tipp: Ha a logók a GitHubon vannak, használd a raw URL-t!
-    st.image("BME_logo_transparent_0.png", width=100)
-    st.image("bme_nti_logo_white-250x125.png", width=100)
+# 1. SOR: LOGÓK (Nagyobb méretben, középre igazítva)
+col_logok1, col_logok2 = st.columns([1, 1])
 
-with col_f2:
-    st.markdown("""
-    ### BME Nukleáris Technikai Intézet (NTI)
-    **Kutatási Projekt: Dinamikus Lakossági Tarifarendszerek**
-    
-    © 2026 Szauter Benedek. Minden jog fenntartva.
-    
-    Ez a dashboard a BME NTI keretein belül végzett TDK kutatás részeként készült. 
-    A felhasznált piaci adatok forrása: [HUPX/Eurostat].
-    """)
+with col_logok1:
+    st.image("BME_logo_transparent_0.png", width=200) # Itt állítsd be a kívánt méretet
+with col_logok2:
+    st.image("bme_nti_logo_white-250x125.png", width=200)
+
+# 2. SOR: COPYRIGHT ÉS INFORMÁCIÓK (Kisebb betűmérettel)
+st.markdown(
+    """
+    <div style="text-align: center; font-size: 0.85em; color: #666; margin-top: 20px;">
+    <strong>BME Nukleáris Technikai Intézet (NTI)</strong> | Dinamikus Lakossági Tarifarendszerek Kutatása<br>
+    © 2026 Szauter Benedek. Minden jog fenntartva.<br>
+    <em>Ez a dashboard a BME NTI keretein belül végzett TDK kutatás részeként készült.</em>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
