@@ -150,7 +150,7 @@ with tab1:
     
     
     lehetőséget adunk nekik pénzügyi megtakarítás elérésére. Ahhoz, hogy ezt a célunkat 
-    szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére."""
+    szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére.""")
 
 # --- TAB 2 ---
 with tab2:
