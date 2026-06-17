@@ -118,9 +118,9 @@ consumer_loads_synthetic = generate_synthetic_data()
 # SIDEBAR
 # ==========================================================
 st.sidebar.header("Globális Beállítások")
-txt_tou_mag = st.sidebar.number_input("TOU szorzó", 1.0, 5.0, 1.5, 0.1)
-txt_red = st.sidebar.number_input("Piros napok", 0, 150, 22)
-txt_white = st.sidebar.number_input("Fehér napok", 0, 150, 43)
+txt_tou_mag = st.sidebar.number_input("Időszakos árszabályozás szorzója", 1.0, 5.0, 1.5, 0.1)
+txt_red = st.sidebar.number_input("Piros napok száma", 0, 150, 22)
+txt_white = st.sidebar.number_input("Fehér napok száma", 0, 150, 43)
 tou_blocks_status = [st.sidebar.checkbox("0-8h", False), st.sidebar.checkbox("8-16h", False), st.sidebar.checkbox("16-24h", True)]
 
 df_unit = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_status)
@@ -139,7 +139,7 @@ with tab1:
                           pd.DataFrame({'Év': row['Év'], 'Rugalmasság': row['Rugalmasság'], 'Számla': consumer_loads_synthetic * row['TOU_UC'], 'Modell': 'TOU'})])
     df_plot = pd.concat(final_data)
     fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
-    for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['CPP (EDF Tempo)', 'TOU Rendszer'], ['viridis', 'magma']):
+    for ax, mod, title, pal in zip([ax1, ax2], ['EDF', 'TOU'], ['Kritikus csúcs (EDF Tempo)', 'Időszakos árszabályozás'], ['viridis', 'magma']):
         sns.boxplot(x='Év', y='Számla', hue='Rugalmasság', data=df_plot[df_plot['Modell'] == mod], palette=pal, showfliers=False, ax=ax)
         ax.axhline(y=36*np.median(consumer_loads_synthetic), color='black', ls='--', alpha=0.3)
         ax.set_title(title, fontweight='bold')
@@ -147,7 +147,7 @@ with tab1:
 
 # --- TAB 2 ---
 with tab2:
-    st.subheader("Órás szintű heti profil")
+    st.subheader("Órás bontású heti profil")
     
     # 1. SZINT: Bemeneti paraméterek (Minden, ami nehéz számítást igényel)
     col1, col2, col3 = st.columns(3)
@@ -169,7 +169,6 @@ with tab2:
     # Az ezen a dekorátoron belüli checkboxok kattintása NEM futtatja újra a fenti modellt!
     @st.fragment
     def render_interactive_plots(hourly_data, time_slice):
-        st.write("**Görbék ki-be kapcsolása (Azonnali válasz):**")
         c1, c2, c3, c4 = st.columns(4)
         s_p = c1.checkbox("Piaci ár mutatása", True)
         s_o = c2.checkbox("Eredeti fogyasztás (Orig) mutatása", True)
@@ -197,20 +196,20 @@ with tab2:
             # Árak (Bal tengely)
             if s_p: 
                 ax_p1.plot(v_s, label="Piaci ár", color="blue", alpha=0.25, linewidth=1)
-            ax_p1.plot(cpp_s, label="CPP tarifa (EDF)", color="orange", linewidth=2.5)
-            ax_p1.set_ylabel("Áramár [Ft/kWh]", color="orange")
+            ax_p1.plot(cpp_s, label="Kritikus csúcs tarifa (EDF)", color="orange", linewidth=2.5)
+            ax_p1.set_ylabel("Villamos energia ára [Ft/kWh]", color="orange")
             ax_p1.tick_params(axis='y', labelcolor="orange")
             
             # Fogyasztások (Jobb tengely)
             if s_o: 
                 ax_l1.plot(eon_s, label="Eredeti fogyasztás", color="green", ls="--", alpha=0.25, linewidth=1)
             if s_se: 
-                ax_l1.plot(eon_cpp_s, label="Módosított CPP fogy.", color="red", linewidth=2)
+                ax_l1.plot(eon_cpp_s, label="Módosított kritikus csúcs melletti fogy.", color="red", linewidth=2)
             ax_l1.set_ylabel("Fogyasztás [kWh]", color="red")
             ax_l1.tick_params(axis='y', labelcolor="red")
             
             # Elrendezés és Legend
-            ax_p1.set_title("CPP (Kritikus Csúcsidős) Rendszer Profilja", fontweight='bold')
+            ax_p1.set_title("Kritikus csúcs rendszer profilja", fontweight='bold')
             ax_p1.set_xlim(0, 168)
             ax_p1.set_xticks(range(0, 169, 24))
             ax_p1.grid(True, alpha=0.15)
@@ -231,20 +230,20 @@ with tab2:
             # Árak (Bal tengely)
             if s_p: 
                 ax_p2.plot(v_s, label="Piaci ár", color="blue", alpha=0.25, linewidth=1)
-            ax_p2.plot(tou_s, label="TOU tarifa", color="purple", linewidth=2.5, ls="-")
-            ax_p2.set_ylabel("Áramár [Ft/kWh]", color="purple")
+            ax_p2.plot(tou_s, label="Időszakos árszabályozás", color="purple", linewidth=2.5, ls="-")
+            ax_p2.set_ylabel("Villamos energia ára [Ft/kWh]", color="purple")
             ax_p2.tick_params(axis='y', labelcolor="purple")
             
             # Fogyasztások (Jobb tengely)
             if s_o: 
                 ax_l2.plot(eon_s, label="Eredeti fogyasztás", color="green", ls="--", alpha=0.25, linewidth=1)
             if s_st: 
-                ax_l2.plot(eon_tou_s, label="Módosított TOU fogy.", color="crimson", linewidth=2)
+                ax_l2.plot(eon_tou_s, label="Módosított időszakos árszabályozás melletti fogy.", color="crimson", linewidth=2)
             ax_l2.set_ylabel("Fogyasztás [kWh]", color="crimson")
             ax_l2.tick_params(axis='y', labelcolor="crimson")
             
             # Elrendezés és Legend
-            ax_p2.set_title("TOU (Időszakos) Rendszer Profilja", fontweight='bold')
+            ax_p2.set_title("(Időszakos rendszer profilja", fontweight='bold')
             ax_p2.set_xlim(0, 168)
             ax_p2.set_xticks(range(0, 169, 24))
             ax_p2.grid(True, alpha=0.15)
@@ -260,7 +259,7 @@ with tab2:
 
 # --- TAB 3 (ÚJ: Piaci Áringadozás) ---
 with tab3:
-    st.subheader("Villamosenergia piaci ár eloszlása óránként")
+    st.subheader("Villamosenergia piaci áreloszlása óránként")
     sel_year_market = st.selectbox("Év kiválasztása az elemzéshez:", list(YEARS), index=len(YEARS)-1, key="market_year")
     
     # Adatok előkészítése a boxplot-hoz
