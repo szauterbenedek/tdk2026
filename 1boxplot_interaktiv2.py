@@ -147,7 +147,11 @@ with tab1:
 
     st.info("""A grafikonon összehasonlíthatjuk a két vizsgált tarifarandszer hatását egy általunk kiválasztott fogyasztóra. Célunk egy olyan rendszer kialakítása, 
     amivel nem kényszerítjük a lakosságot fogyasztásuk módosítására, hanem lehetőséget adunk nekik pénzügyi megtakarítás elérésére. Ahhoz, hogy ezt a célunkat 
-    szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére.""")
+    szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére (ez a 
+    szaggatott vonal). A grafikonok elkészítésekor a Háttér oldalon látható fogyaszói eloszlást feltételeztünk, a számításokat pedig egy 10000 fős populációra 
+    végeztük el.
+    A számításokat négy rugalmassági szinten értékeltük ki (0%, 10%, 20%, 30%), és ezeket közösen ábrázoltuk. A tarifarendszernek adtunk egy kezdeti állapotot, 
+    amely tetszőlegesen módosítható. """)
 
 # --- TAB 2 ---
 with tab2:
