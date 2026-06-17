@@ -146,10 +146,7 @@ with tab1:
     st.pyplot(fig1)
 
     st.info("""A grafikonon összehasonlíthatjuk a két vizsgált tarifarandszer hatását egy általunk kiválasztott fogyasztóra. Célunk egy olyan rendszer kialakítása, 
-    amivel nem kényszerítjük a lakosságot fogyasztásuk módosítására, hanem 
-    
-    
-    lehetőséget adunk nekik pénzügyi megtakarítás elérésére. Ahhoz, hogy ezt a célunkat 
+    amivel nem kényszerítjük a lakosságot fogyasztásuk módosítására, hanem lehetőséget adunk nekik pénzügyi megtakarítás elérésére. Ahhoz, hogy ezt a célunkat 
     szemelőtt tartsuk, a grafikonokon feltüntettük a fix árszabáshoz tartozó éves villanyszámlát, egy átlagosnak mondható (3000 kWh/év) fogyaszó esetére.""")
 
 # --- TAB 2 ---
