@@ -236,14 +236,16 @@ with tab2:
             ax_p1.plot(cpp_s, label="Kritikus csúcs tarifa (EDF)", color="red", linewidth=1)
             ax_p1.set_ylabel("Villamos energia ára [Ft/kWh]", color="black")
             ax_p1.tick_params(axis='y', labelcolor="black")
+            ax_p1.set_ylim(0, 100)
             
             # Fogyasztások (Jobb tengely)
             if s_o: 
                 ax_l1.plot(eon_s, label="Eredeti fogyasztás", color="green", ls="--", alpha=0.25, linewidth=1)
             if s_se: 
-                ax_l1.plot(eon_cpp_s, label="Módosított kritikus csúcs melletti fogy.", color="red", linewidth=1)
-            ax_l1.set_ylabel("Fogyasztás [kWh]", color="black")
+                ax_l1.plot(eon_cpp_s, label="Módosított kritikus csúcs melletti fogy.", color="green", linewidth=1)
+            ax_l1.set_ylabel("Fogyasztás [kW]", color="black")
             ax_l1.tick_params(axis='y', labelcolor="black")
+            ax.l1.set_ylim(0, 1)
             
             # Elrendezés és Legend
             ax_p1.set_title("Kritikus csúcs rendszer profilja", fontweight='bold')
@@ -270,6 +272,7 @@ with tab2:
             ax_p2.plot(tou_s, label="Időszakos árszabályozás", color="red", linewidth=1)
             ax_p2.set_ylabel("Villamos energia ára [Ft/kWh]", color="black")
             ax_p2.tick_params(axis='y', labelcolor="black")
+            ax_p2.set_ylim(0, 100)
             
             # Fogyasztások (Jobb tengely)
             if s_o: 
@@ -278,6 +281,7 @@ with tab2:
                 ax_l2.plot(eon_tou_s, label="Módosított időszakos árszabályozás melletti fogy.", color="green", linewidth=1)
             ax_l2.set_ylabel("Fogyasztás [kWh]", color="black")
             ax_l2.tick_params(axis='y', labelcolor="black")
+            ax_l2.set_ylim(0, 1)
             
             # Elrendezés és Legend
             ax_p2.set_title("Időszakos rendszer profilja", fontweight='bold')
