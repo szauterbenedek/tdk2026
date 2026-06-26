@@ -25,6 +25,14 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+# Mentés beállítása
+
+def get_fig_bytes(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches='tight', dpi=300)
+    return buf.getvalue()
+
 # =========================
 # ADATOK BETÖLTÉSE
 # =========================
@@ -173,6 +181,13 @@ with tab1:
         ax.set_title(title, fontweight='bold')
     st.pyplot(fig1)
 
+    st.download_button(
+        label="📸 Ábra mentése (PNG)",
+        data=get_fig_bytes(fig1),
+        file_name="grafikon.png",
+        mime="image/png"
+    )
+    
     st.markdown("""
     <div class="custom-yap-box">
     A tarifarendszereket próbálgatva feltűnő, hogy míg a kritikus csúcs tarifarendszer kitüntetett napok (piros és fehér) számát drasztikusan kell növelni, 
