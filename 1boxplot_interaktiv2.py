@@ -315,7 +315,7 @@ with tab3:
     ax_m.set_title(f"Piaci ár eloszlása óránként - {sel_year_market} [Eur/MWh]", fontsize=16, fontweight='bold')
     ax_m.set_xlabel("A nap órája (0-23)", fontsize=12)
     ax_m.set_ylabel("Ár [Eur/MWh]", fontsize=12)
-    ax_m.set_ylim(0, 700)
+    ax_m.set_ylim(-100, 700)
     ax_m.grid(axis='y', linestyle=':', alpha=0.6)
     plt.tight_layout()
     st.pyplot(fig3)
