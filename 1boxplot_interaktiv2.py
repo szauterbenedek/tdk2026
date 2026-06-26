@@ -132,9 +132,9 @@ consumer_loads_synthetic = generate_synthetic_data()
 # ==========================================================
 st.sidebar.header("Globális Beállítások")
 txt_tou_mag = st.sidebar.number_input("Időszakos árszabályozás szorzója", 1.0, 5.0, 1.5, 0.1)
-txt_red = st.sidebar.number_input("Piros napok száma", 0, 150, 22)
-txt_white = st.sidebar.number_input("Fehér napok száma", 0, 150, 43)
-tou_blocks_status = [st.sidebar.checkbox("0-8h", False), st.sidebar.checkbox("8-16h", False), st.sidebar.checkbox("16-24h", True)]
+tou_blocks_status = [st.sidebar.checkbox("0:00-8:00", False), st.sidebar.checkbox("8:00-16:00", False), st.sidebar.checkbox("16:00-24:00", True)]
+txt_red = st.sidebar.number_input("Piros napok száma", 0, 150, 22, 5)
+txt_white = st.sidebar.number_input("Fehér napok száma", 0, 150, 43, 5)
 
 df_unit = calculate_all_scenarios(txt_tou_mag, txt_red, txt_white, tou_blocks_status)
 
@@ -315,6 +315,7 @@ with tab3:
     ax_m.set_title(f"Piaci ár eloszlása óránként - {sel_year_market} [Eur/MWh]", fontsize=16, fontweight='bold')
     ax_m.set_xlabel("A nap órája (0-23)", fontsize=12)
     ax_m.set_ylabel("Ár [Eur/MWh]", fontsize=12)
+    ax_m.set_ylim(0, 700)
     ax_m.grid(axis='y', linestyle=':', alpha=0.6)
     plt.tight_layout()
     st.pyplot(fig3)
