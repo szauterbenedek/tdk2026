@@ -366,7 +366,7 @@ st.markdown(
     """
     <div style="text-align: center; font-size: 0.85em; color: #666; margin-top: 20px;">
     <strong>BME Nukleáris Technikai Intézet (NTI)</strong> | Dinamikus Lakossági Tarifarendszerek Kutatása<br>
-    © 2026 Szauter Benedek. Minden jog fenntartva.<br>
+    © 2026 Szauter Benedek, Biró Bence, Aszódi Attila. Minden jog fenntartva.<br>
     <em>Ez a dashboard a BME NTI keretein belül végzett TDK kutatás részeként készült.</em>
     </div>
     """, 
